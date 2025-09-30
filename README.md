@@ -1,19 +1,23 @@
-# Python Basics with Pydantic
+# Python Application Development with Pydantic
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Pydantic](https://img.shields.io/badge/pydantic-2.0+-green.svg)](https://docs.pydantic.dev/)
+[![SQLite](https://img.shields.io/badge/database-sqlite-blue.svg)](https://sqlite.org/)
+[![Streamlit](https://img.shields.io/badge/streamlit-1.25+-red.svg)](https://streamlit.io/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A comprehensive tutorial repository covering Python fundamentals with Pydantic, specifically designed for Databricks and Streamlit development workflows.
+A comprehensive guide to building production-ready Python applications using Pydantic for data validation, SQLite for persistence, and modern frameworks like Streamlit and FastAPI.
 
 ## 🎯 Overview
 
-This repository provides a hands-on learning experience for Python developers looking to master:
+This repository demonstrates professional Python application development with:
 
-- **Python Fundamentals**: Core concepts, data structures, and object-oriented programming
-- **Pydantic Data Modeling**: Type-safe data validation and serialization
-- **Databricks Integration**: ETL pipelines, data quality monitoring, and ML feature stores
-- **Streamlit Applications**: Interactive web apps with real-time data validation
+- **Pydantic v2**: Advanced data validation, serialization, and type safety
+- **SQLite Database**: Local database with SQLAlchemy ORM integration  
+- **Streamlit Applications**: Interactive web applications with database connectivity
+- **FastAPI APIs**: RESTful API development with automatic documentation
+- **Repository Pattern**: Clean architecture and separation of concerns
+- **Modern Python**: Type hints, async/await, and contemporary development patterns
 
 ## 📚 What's Included
 
