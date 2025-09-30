@@ -77,7 +77,7 @@ class EmployeeTable(Base, TimestampMixin):
 
     # Additional data stored as JSON
     skills = Column(JSON, nullable=True, default=list)
-    metadata = Column(JSON, nullable=True, default=dict)
+    additional_metadata = Column(JSON, nullable=True, default=dict)
 
     def __repr__(self) -> str:
         """String representation of Employee."""
@@ -270,7 +270,7 @@ def create_sample_employee(session: Session) -> EmployeeTable:
         salary=Decimal("95000.00"),
         status=EmploymentStatus.ACTIVE,
         skills=["Python", "SQL", "Machine Learning", "Docker"],
-        metadata={"performance_rating": "excellent", "remote_eligible": True}
+        additional_metadata={"performance_rating": "excellent", "remote_eligible": True}
     )
     
     session.add(employee)

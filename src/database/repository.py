@@ -297,6 +297,17 @@ class EmployeeRepository(BaseRepository):
     
     def _to_pydantic(self, db_employee: EmployeeTable) -> Employee:
         """Convert SQLAlchemy model to Pydantic model."""
+        from ..models.employee import Department, EmploymentStatus
+        
+        # Ensure enum values are properly converted
+        department = db_employee.department
+        if isinstance(department, str):
+            department = Department(department)
+        
+        status = db_employee.status
+        if isinstance(status, str):
+            status = EmploymentStatus(status)
+        
         return Employee(
             id=db_employee.id,
             first_name=db_employee.first_name,
@@ -305,14 +316,14 @@ class EmployeeRepository(BaseRepository):
             phone=db_employee.phone,
             birth_date=db_employee.birth_date,
             employee_id=db_employee.employee_id,
-            department=db_employee.department,
+            department=department,
             position=db_employee.position,
             hire_date=db_employee.hire_date,
             salary=db_employee.salary,
-            status=db_employee.status,
+            status=status,
             manager_id=db_employee.manager_id,
             skills=db_employee.skills or [],
-            metadata=db_employee.metadata or {},
+            additional_metadata=db_employee.additional_metadata or {},
             created_at=db_employee.created_at,
             updated_at=db_employee.updated_at
         )

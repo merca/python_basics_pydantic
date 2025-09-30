@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Generator, Optional
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import StaticPool
@@ -153,7 +153,7 @@ class DatabaseManager:
         """
         try:
             with self.session_scope() as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             logger.info("Database connection test successful")
             return True
         except Exception as e:
@@ -178,10 +178,10 @@ class DatabaseManager:
             # Add SQLite specific info
             try:
                 with self.session_scope() as session:
-                    result = session.execute("PRAGMA database_list").fetchall()
+                    result = session.execute(text("PRAGMA database_list")).fetchall()
                     info["sqlite_databases"] = [dict(row._mapping) for row in result]
                     
-                    result = session.execute("PRAGMA compile_options").fetchall()
+                    result = session.execute(text("PRAGMA compile_options")).fetchall()
                     info["sqlite_compile_options"] = [row[0] for row in result]
             except Exception as e:
                 logger.warning(f"Could not get SQLite info: {e}")

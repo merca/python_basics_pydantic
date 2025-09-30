@@ -255,9 +255,29 @@ class UserCreate(DatabaseModel):
         
         return v
     
-    # Reuse validators from User model
-    validate_username = User.validate_username
-    validate_permissions = User.validate_permissions
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        """Validate username format and reserved names."""
+        v = v.lower().strip()
+        
+        # Check for reserved usernames
+        reserved = {'admin', 'root', 'system', 'api', 'support'}
+        if v in reserved:
+            raise ValueError(f'Username "{v}" is reserved')
+        
+        return v
+    
+    @field_validator('permissions')
+    @classmethod
+    def validate_permissions(cls, v: List[str]) -> List[str]:
+        """Validate and normalize permissions."""
+        if not v:
+            return v
+        
+        # Normalize permissions (lowercase, unique)
+        normalized = list(set(perm.lower().strip() for perm in v if perm.strip()))
+        return normalized
 
 
 class UserUpdate(DatabaseModel):
@@ -310,8 +330,16 @@ class UserUpdate(DatabaseModel):
         description="User's preferred timezone"
     )
     
-    # Reuse validators from User model
-    validate_permissions = User.validate_permissions
+    @field_validator('permissions')
+    @classmethod
+    def validate_permissions(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Validate and normalize permissions."""
+        if v is None or not v:
+            return v
+        
+        # Normalize permissions (lowercase, unique)
+        normalized = list(set(perm.lower().strip() for perm in v if perm.strip()))
+        return normalized
 
 
 class UserLogin(DatabaseModel):

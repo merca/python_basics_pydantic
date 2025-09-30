@@ -64,7 +64,7 @@ class ValidationResponse(BaseModel):
         default_factory=list,
         description="List of warnings (non-blocking issues)"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    additional_metadata: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Additional metadata about the response"
     )
@@ -74,14 +74,14 @@ class ValidationResponse(BaseModel):
         cls, 
         data: Any = None, 
         message: str = "Operation completed successfully",
-        metadata: Optional[Dict[str, Any]] = None
+        additional_metadata: Optional[Dict[str, Any]] = None
     ) -> 'ValidationResponse':
         """Create a successful validation response."""
         return cls(
             success=True,
             message=message,
             data=data,
-            metadata=metadata
+            additional_metadata=additional_metadata
         )
     
     @classmethod
@@ -90,7 +90,7 @@ class ValidationResponse(BaseModel):
         errors: List[ErrorDetail], 
         message: str = "Validation failed",
         data: Any = None,
-        metadata: Optional[Dict[str, Any]] = None
+        additional_metadata: Optional[Dict[str, Any]] = None
     ) -> 'ValidationResponse':
         """Create an error validation response."""
         return cls(
@@ -98,7 +98,7 @@ class ValidationResponse(BaseModel):
             message=message,
             data=data,
             errors=errors,
-            metadata=metadata
+            additional_metadata=additional_metadata
         )
     
     @classmethod

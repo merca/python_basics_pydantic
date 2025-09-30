@@ -60,7 +60,7 @@ class Employee(DatabaseModel):
     )
     phone: Optional[str] = Field(
         default=None,
-        pattern=r'^\+?[\d\s\-\(\)]+$',
+        pattern=r'^\+?[\d\s\-\(\)\.x]+$',
         min_length=10,
         max_length=20,
         description="Employee's phone number"
@@ -109,7 +109,7 @@ class Employee(DatabaseModel):
         default_factory=list,
         description="List of employee skills"
     )
-    metadata: Dict[str, Any] = Field(
+    additional_metadata: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata about the employee"
     )
@@ -241,7 +241,7 @@ class EmployeeCreate(DatabaseModel):
     )
     phone: Optional[str] = Field(
         default=None,
-        pattern=r'^\+?[\d\s\-\(\)]+$',
+        pattern=r'^\+?[\d\s\-\(\)\.x]+$',
         min_length=10,
         max_length=20,
         description="Employee's phone number"
@@ -291,16 +291,64 @@ class EmployeeCreate(DatabaseModel):
         default_factory=list,
         description="List of employee skills"
     )
-    metadata: Dict[str, Any] = Field(
+    additional_metadata: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata about the employee"
     )
 
-    # Reuse validators from Employee model
-    validate_birth_date = Employee.validate_birth_date
-    validate_hire_date = Employee.validate_hire_date
-    validate_salary = Employee.validate_salary
-    validate_skills = Employee.validate_skills
+    @field_validator('birth_date')
+    @classmethod
+    def validate_birth_date(cls, v: Optional[date]) -> Optional[date]:
+        """Validate that birth date is not in the future and employee is at least 16."""
+        if v is None:
+            return v
+        
+        today = date.today()
+        if v >= today:
+            raise ValueError('Birth date cannot be in the future')
+        
+        # Calculate age
+        age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
+        if age < 16:
+            raise ValueError('Employee must be at least 16 years old')
+        
+        return v
+
+    @field_validator('hire_date')
+    @classmethod
+    def validate_hire_date(cls, v: date) -> date:
+        """Validate that hire date is not in the future."""
+        if v > date.today():
+            raise ValueError('Hire date cannot be in the future')
+        return v
+
+    @field_validator('salary')
+    @classmethod
+    def validate_salary(cls, v: Decimal) -> Decimal:
+        """Validate salary is within reasonable bounds."""
+        if v < 0:
+            raise ValueError('Salary cannot be negative')
+        if v > Decimal('10000000'):  # 10 million
+            raise ValueError('Salary seems unreasonably high')
+        return v
+
+    @field_validator('skills')
+    @classmethod
+    def validate_skills(cls, v: List[str]) -> List[str]:
+        """Ensure skills are unique and non-empty."""
+        if not v:
+            return v
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_skills = []
+        for skill in v:
+            skill = skill.strip()
+            if skill and skill.lower() not in seen:
+                seen.add(skill.lower())
+                unique_skills.append(skill)
+        
+        return unique_skills
 
 
 class EmployeeUpdate(DatabaseModel):
@@ -328,7 +376,7 @@ class EmployeeUpdate(DatabaseModel):
     )
     phone: Optional[str] = Field(
         default=None,
-        pattern=r'^\+?[\d\s\-\(\)]+$',
+        pattern=r'^\+?[\d\s\-\(\)\.x]+$',
         min_length=10,
         max_length=20,
         description="Employee's phone number"
@@ -371,15 +419,58 @@ class EmployeeUpdate(DatabaseModel):
         default=None,
         description="List of employee skills"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    additional_metadata: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Additional metadata about the employee"
     )
 
-    # Reuse validators from Employee model
-    validate_birth_date = Employee.validate_birth_date
-    validate_salary = Employee.validate_salary
-    validate_skills = Employee.validate_skills
+    @field_validator('birth_date')
+    @classmethod
+    def validate_birth_date(cls, v: Optional[date]) -> Optional[date]:
+        """Validate that birth date is not in the future and employee is at least 16."""
+        if v is None:
+            return v
+        
+        today = date.today()
+        if v >= today:
+            raise ValueError('Birth date cannot be in the future')
+        
+        # Calculate age
+        age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
+        if age < 16:
+            raise ValueError('Employee must be at least 16 years old')
+        
+        return v
+
+    @field_validator('salary')
+    @classmethod
+    def validate_salary(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+        """Validate salary is within reasonable bounds."""
+        if v is None:
+            return v
+        if v < 0:
+            raise ValueError('Salary cannot be negative')
+        if v > Decimal('10000000'):  # 10 million
+            raise ValueError('Salary seems unreasonably high')
+        return v
+
+    @field_validator('skills')
+    @classmethod
+    def validate_skills(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Ensure skills are unique and non-empty."""
+        if v is None or not v:
+            return v
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_skills = []
+        for skill in v:
+            skill = skill.strip()
+            if skill and skill.lower() not in seen:
+                seen.add(skill.lower())
+                unique_skills.append(skill)
+        
+        return unique_skills
 
 
 class EmployeeResponse(Employee):
@@ -419,5 +510,5 @@ def create_sample_employee() -> EmployeeCreate:
         position="Senior Software Engineer",
         salary=Decimal("95000.00"),
         skills=["Python", "SQL", "Machine Learning", "Docker"],
-        metadata={"performance_rating": "excellent", "remote_eligible": True}
+        additional_metadata={"performance_rating": "excellent", "remote_eligible": True}
     )

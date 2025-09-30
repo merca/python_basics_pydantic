@@ -109,7 +109,7 @@ def create_sample_employees(count: int = 20) -> List[EmployeeTable]:
             salary=salary,
             status=status,
             skills=skills,
-            metadata={
+            additional_metadata={
                 "performance_rating": random.choice(["excellent", "good", "satisfactory", "needs_improvement"]),
                 "remote_eligible": random.choice([True, False]),
                 "emergency_contact": fake.name(),
@@ -299,7 +299,7 @@ def create_demo_data() -> dict:
             "hire_date": date(2020, 1, 15),
             "salary": Decimal("95000.00"),
             "skills": ["Python", "React", "Docker", "AWS", "Machine Learning"],
-            "metadata": {"performance_rating": "excellent", "remote_eligible": True}
+            "additional_metadata": {"performance_rating": "excellent", "remote_eligible": True}
         },
         {
             "first_name": "Bob",
@@ -313,7 +313,7 @@ def create_demo_data() -> dict:
             "hire_date": date(2019, 6, 1),
             "salary": Decimal("75000.00"),
             "skills": ["SEO", "Content Marketing", "Analytics", "Email Marketing"],
-            "metadata": {"performance_rating": "good", "remote_eligible": True}
+            "additional_metadata": {"performance_rating": "good", "remote_eligible": True}
         },
         {
             "first_name": "Carol",
@@ -327,7 +327,7 @@ def create_demo_data() -> dict:
             "hire_date": date(2021, 3, 10),
             "salary": Decimal("60000.00"),
             "skills": ["CRM", "Lead Generation", "Negotiation", "Customer Relations"],
-            "metadata": {"performance_rating": "good", "remote_eligible": False}
+            "additional_metadata": {"performance_rating": "good", "remote_eligible": False}
         }
     ]
     

@@ -212,7 +212,7 @@ if page == "📊 Dashboard":
                 dept_salary_data = []
                 for emp in employees:
                     dept_salary_data.append({
-                        'Department': emp.department.value,
+                        'Department': emp.department.value if hasattr(emp.department, 'value') else str(emp.department),
                         'Salary': float(emp.salary)
                     })
                 
@@ -245,7 +245,7 @@ if page == "📊 Dashboard":
                 # Status distribution
                 status_data = {}
                 for emp in employees:
-                    status = emp.status.value
+                    status = emp.status.value if hasattr(emp.status, 'value') else str(emp.status)
                     status_data[status] = status_data.get(status, 0) + 1
                 
                 fig_status = px.bar(
@@ -360,12 +360,12 @@ elif page == "➕ Add Employee":
                                 st.write(f"**ID:** {new_employee.id}")
                                 st.write(f"**Name:** {new_employee.full_name}")
                                 st.write(f"**Email:** {new_employee.email}")
-                                st.write(f"**Department:** {new_employee.department.value}")
+                                st.write(f"**Department:** {new_employee.department.value if hasattr(new_employee.department, 'value') else str(new_employee.department)}")
                             with col2:
                                 st.write(f"**Employee ID:** {new_employee.employee_id}")
                                 st.write(f"**Position:** {new_employee.position}")
                                 st.write(f"**Salary:** ${new_employee.salary:,.2f}")
-                                st.write(f"**Status:** {new_employee.status.value}")
+                                st.write(f"**Status:** {new_employee.status.value if hasattr(new_employee.status, 'value') else str(new_employee.status)}")
                     
                     except ValueError as e:
                         st.error(f"Database error: {str(e)}")
@@ -438,11 +438,11 @@ elif page == "📋 View Employees":
                     'Employee ID': emp.employee_id,
                     'Name': emp.full_name,
                     'Email': emp.email,
-                    'Department': emp.department.value,
+                    'Department': emp.department.value if hasattr(emp.department, 'value') else str(emp.department),
                     'Position': emp.position,
                     'Salary': f"${emp.salary:,.2f}",
                     'Hire Date': emp.hire_date.strftime('%Y-%m-%d'),
-                    'Status': emp.status.value,
+                    'Status': emp.status.value if hasattr(emp.status, 'value') else str(emp.status),
                     'Years of Service': emp.years_of_service
                 })
             
@@ -506,9 +506,9 @@ elif page == "📋 View Employees":
                         with col2:
                             st.markdown("**Employment Information**")
                             st.write(f"**Employee ID:** {selected_emp.employee_id}")
-                            st.write(f"**Department:** {selected_emp.department.value}")
+                            st.write(f"**Department:** {selected_emp.department.value if hasattr(selected_emp.department, 'value') else str(selected_emp.department)}")
                             st.write(f"**Position:** {selected_emp.position}")
-                            st.write(f"**Status:** {selected_emp.status.value}")
+                            st.write(f"**Status:** {selected_emp.status.value if hasattr(selected_emp.status, 'value') else str(selected_emp.status)}")
                         
                         with col3:
                             st.markdown("**Work Details**")
@@ -756,11 +756,11 @@ elif page == "🔧 Database Management":
                         'Email': emp.email,
                         'Phone': emp.phone,
                         'Birth_Date': emp.birth_date.isoformat() if emp.birth_date else None,
-                        'Department': emp.department.value,
+                        'Department': emp.department.value if hasattr(emp.department, 'value') else str(emp.department),
                         'Position': emp.position,
                         'Hire_Date': emp.hire_date.isoformat(),
                         'Salary': float(emp.salary),
-                        'Status': emp.status.value,
+                        'Status': emp.status.value if hasattr(emp.status, 'value') else str(emp.status),
                         'Manager_ID': emp.manager_id,
                         'Skills': ', '.join(emp.skills),
                         'Created_At': emp.created_at.isoformat() if emp.created_at else None,
