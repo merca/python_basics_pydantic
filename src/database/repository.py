@@ -7,19 +7,14 @@ providing a clean interface between our Pydantic models and SQLAlchemy models.
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, text
+from sqlalchemy import func, and_, or_
 from decimal import Decimal
 
-from .models import EmployeeTable, UserTable, AuditLogTable
+from .models import EmployeeTable
 from ..models.employee import (
     Employee, EmployeeCreate, EmployeeUpdate, 
     Department, EmploymentStatus
 )
-from ..models.user import (
-    User, UserCreate, UserUpdate, 
-    UserRole, UserStatus
-)
-from ..models.validation import ValidationResponse, PaginatedResponse
 
 
 class BaseRepository:
@@ -51,6 +46,24 @@ class EmployeeRepository(BaseRepository):
     Provides CRUD operations and business logic for employee data.
     """
     
+    def _generate_employee_id(self) -> str:
+        """Generate a unique employee ID."""
+        # Get the highest existing employee ID
+        result = self.session.query(func.max(EmployeeTable.employee_id)).scalar()
+        
+        if result:
+            # Extract number from existing ID (e.g., "EMP001" -> 1)
+            import re
+            match = re.search(r'EMP(\d+)', result)
+            if match:
+                next_num = int(match.group(1)) + 1
+            else:
+                next_num = 1
+        else:
+            next_num = 1
+        
+        return f"EMP{next_num:03d}"
+    
     def create(self, employee_data: EmployeeCreate) -> Employee:
         """
         Create a new employee.
@@ -64,6 +77,10 @@ class EmployeeRepository(BaseRepository):
         Raises:
             ValueError: If employee_id or email already exists
         """
+        # Auto-generate employee_id if not provided
+        if not employee_data.employee_id:
+            employee_data.employee_id = self._generate_employee_id()
+        
         # Check for duplicates
         existing_employee_id = self.session.query(EmployeeTable).filter(
             EmployeeTable.employee_id == employee_data.employee_id
@@ -191,7 +208,7 @@ class EmployeeRepository(BaseRepository):
         department: Optional[Department] = None,
         status: Optional[EmploymentStatus] = None,
         search: Optional[str] = None
-    ) -> PaginatedResponse:
+    ) -> Dict[str, Any]:
         """
         List employees with filtering and pagination.
         
@@ -203,7 +220,7 @@ class EmployeeRepository(BaseRepository):
             search: Search term for name or email
             
         Returns:
-            Paginated response with employees
+            Dictionary with employees and pagination info
         """
         query = self.session.query(EmployeeTable)
         
@@ -236,13 +253,17 @@ class EmployeeRepository(BaseRepository):
         
         # Calculate pagination info
         page = (skip // limit) + 1
+        has_next = (skip + limit) < total_count
+        has_prev = skip > 0
         
-        return PaginatedResponse.create(
-            items=pydantic_employees,
-            total_count=total_count,
-            page=page,
-            page_size=limit
-        )
+        return {
+            'items': pydantic_employees,
+            'total_count': total_count,
+            'page': page,
+            'page_size': limit,
+            'has_next': has_next,
+            'has_prev': has_prev
+        }
     
     def get_department_stats(self) -> Dict[str, int]:
         """
@@ -295,6 +316,53 @@ class EmployeeRepository(BaseRepository):
         
         return [self._to_pydantic(emp) for emp in employees]
     
+    def get_average_years_of_service(self) -> float:
+        """
+        Get average years of service by calculating from hire_date.
+        
+        Returns:
+            Average years of service
+        """
+        # Get all employees and calculate years of service in Python
+        # since years_of_service is a computed property, not a database column
+        employees = self.session.query(EmployeeTable).all()
+        if not employees:
+            return 0.0
+        
+        total_years = sum(emp.years_of_service for emp in employees)
+        return round(total_years / len(employees), 1)
+    
+    def get_employees_with_managers_count(self) -> int:
+        """
+        Get count of employees who have managers.
+        
+        Returns:
+            Count of employees with managers
+        """
+        return self.session.query(EmployeeTable).filter(
+            EmployeeTable.manager_id.isnot(None)
+        ).count()
+    
+    def get_active_employees_count(self) -> int:
+        """
+        Get count of active employees using database aggregation.
+        
+        Returns:
+            Count of active employees
+        """
+        return self.session.query(EmployeeTable).filter(
+            EmployeeTable.status == EmploymentStatus.ACTIVE
+        ).count()
+    
+    def get_total_employees_count(self) -> int:
+        """
+        Get total count of employees using database aggregation.
+        
+        Returns:
+            Total count of employees
+        """
+        return self.session.query(EmployeeTable).count()
+    
     def _to_pydantic(self, db_employee: EmployeeTable) -> Employee:
         """Convert SQLAlchemy model to Pydantic model."""
         from ..models.employee import Department, EmploymentStatus
@@ -328,241 +396,3 @@ class EmployeeRepository(BaseRepository):
             updated_at=db_employee.updated_at
         )
 
-
-class UserRepository(BaseRepository):
-    """
-    Repository for user database operations.
-    
-    Provides CRUD operations and business logic for user data.
-    """
-    
-    def create(self, user_data: UserCreate) -> User:
-        """
-        Create a new user.
-        
-        Args:
-            user_data: User creation data
-            
-        Returns:
-            Created user
-            
-        Raises:
-            ValueError: If username or email already exists
-        """
-        # Check for duplicates
-        existing_username = self.session.query(UserTable).filter(
-            UserTable.username == user_data.username
-        ).first()
-        if existing_username:
-            raise ValueError(f"Username {user_data.username} already exists")
-        
-        existing_email = self.session.query(UserTable).filter(
-            UserTable.email == user_data.email
-        ).first()
-        if existing_email:
-            raise ValueError(f"Email {user_data.email} already exists")
-        
-        # Hash password (in a real app, you'd use proper password hashing)
-        user_dict = user_data.model_dump(exclude={'password'})
-        user_dict['password_hash'] = f"hashed_{user_data.password}"  # Simplified for demo
-        
-        # Create SQLAlchemy model
-        db_user = UserTable(**user_dict)
-        
-        self.session.add(db_user)
-        self.session.commit()
-        self.session.refresh(db_user)
-        
-        # Convert back to Pydantic model
-        return self._to_pydantic(db_user)
-    
-    def get(self, user_id: int) -> Optional[User]:
-        """
-        Get user by ID.
-        
-        Args:
-            user_id: User ID
-            
-        Returns:
-            User if found, None otherwise
-        """
-        db_user = self.session.query(UserTable).filter(
-            UserTable.id == user_id
-        ).first()
-        
-        return self._to_pydantic(db_user) if db_user else None
-    
-    def get_by_username(self, username: str) -> Optional[User]:
-        """
-        Get user by username.
-        
-        Args:
-            username: Username
-            
-        Returns:
-            User if found, None otherwise
-        """
-        db_user = self.session.query(UserTable).filter(
-            UserTable.username == username
-        ).first()
-        
-        return self._to_pydantic(db_user) if db_user else None
-    
-    def get_by_email(self, email: str) -> Optional[User]:
-        """
-        Get user by email.
-        
-        Args:
-            email: Email address
-            
-        Returns:
-            User if found, None otherwise
-        """
-        db_user = self.session.query(UserTable).filter(
-            UserTable.email == email
-        ).first()
-        
-        return self._to_pydantic(db_user) if db_user else None
-    
-    def update(self, user_id: int, user_data: UserUpdate) -> Optional[User]:
-        """
-        Update a user.
-        
-        Args:
-            user_id: User ID
-            user_data: Updated user data
-            
-        Returns:
-            Updated user if found, None otherwise
-        """
-        db_user = self.session.query(UserTable).filter(
-            UserTable.id == user_id
-        ).first()
-        
-        if not db_user:
-            return None
-        
-        # Update only provided fields
-        update_data = user_data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(db_user, field, value)
-        
-        self.session.commit()
-        self.session.refresh(db_user)
-        
-        return self._to_pydantic(db_user)
-    
-    def delete(self, user_id: int) -> bool:
-        """
-        Delete a user.
-        
-        Args:
-            user_id: User ID
-            
-        Returns:
-            True if deleted, False if not found
-        """
-        db_user = self.session.query(UserTable).filter(
-            UserTable.id == user_id
-        ).first()
-        
-        if not db_user:
-            return False
-        
-        self.session.delete(db_user)
-        self.session.commit()
-        return True
-    
-    def list(
-        self, 
-        skip: int = 0, 
-        limit: int = 100,
-        role: Optional[UserRole] = None,
-        status: Optional[UserStatus] = None,
-        search: Optional[str] = None
-    ) -> PaginatedResponse:
-        """
-        List users with filtering and pagination.
-        
-        Args:
-            skip: Number of records to skip
-            limit: Maximum number of records to return
-            role: Filter by user role
-            status: Filter by user status
-            search: Search term for name, username, or email
-            
-        Returns:
-            Paginated response with users
-        """
-        query = self.session.query(UserTable)
-        
-        # Apply filters
-        if role:
-            query = query.filter(UserTable.role == role)
-        
-        if status:
-            query = query.filter(UserTable.status == status)
-        
-        if search:
-            search_term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    UserTable.first_name.ilike(search_term),
-                    UserTable.last_name.ilike(search_term),
-                    UserTable.username.ilike(search_term),
-                    UserTable.email.ilike(search_term)
-                )
-            )
-        
-        # Get total count
-        total_count = query.count()
-        
-        # Apply pagination
-        users = query.offset(skip).limit(limit).all()
-        
-        # Convert to Pydantic models
-        pydantic_users = [self._to_pydantic(user) for user in users]
-        
-        # Calculate pagination info
-        page = (skip // limit) + 1
-        
-        return PaginatedResponse.create(
-            items=pydantic_users,
-            total_count=total_count,
-            page=page,
-            page_size=limit
-        )
-    
-    def get_role_stats(self) -> Dict[str, int]:
-        """
-        Get user count by role.
-        
-        Returns:
-            Dictionary with role counts
-        """
-        stats = self.session.query(
-            UserTable.role,
-            func.count(UserTable.id)
-        ).group_by(UserTable.role).all()
-        
-        return {str(role): count for role, count in stats}
-    
-    def _to_pydantic(self, db_user: UserTable) -> User:
-        """Convert SQLAlchemy model to Pydantic model."""
-        return User(
-            id=db_user.id,
-            username=db_user.username,
-            email=db_user.email,
-            first_name=db_user.first_name,
-            last_name=db_user.last_name,
-            password_hash=db_user.password_hash,
-            role=db_user.role,
-            permissions=db_user.permissions or [],
-            status=db_user.status,
-            last_login=db_user.last_login,
-            login_attempts=db_user.login_attempts,
-            profile_picture_url=db_user.profile_picture_url,
-            timezone=db_user.timezone,
-            created_at=db_user.created_at,
-            updated_at=db_user.updated_at
-        )

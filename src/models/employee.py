@@ -62,7 +62,7 @@ class Employee(DatabaseModel):
         default=None,
         pattern=r'^\+?[\d\s\-\(\)\.x]+$',
         min_length=10,
-        max_length=20,
+        max_length=30,
         description="Employee's phone number"
     )
     birth_date: Optional[date] = Field(
@@ -71,11 +71,12 @@ class Employee(DatabaseModel):
     )
     
     # Employment Information
-    employee_id: str = Field(
+    employee_id: Optional[str] = Field(
+        default=None,
         min_length=3,
         max_length=10,
         pattern=r'^[A-Z0-9]+$',
-        description="Unique employee identifier"
+        description="Unique employee identifier (auto-generated if not provided)"
     )
     department: Department = Field(
         description="Employee's department"
@@ -243,7 +244,7 @@ class EmployeeCreate(DatabaseModel):
         default=None,
         pattern=r'^\+?[\d\s\-\(\)\.x]+$',
         min_length=10,
-        max_length=20,
+        max_length=30,
         description="Employee's phone number"
     )
     birth_date: Optional[date] = Field(
@@ -252,11 +253,12 @@ class EmployeeCreate(DatabaseModel):
     )
     
     # Employment Information
-    employee_id: str = Field(
+    employee_id: Optional[str] = Field(
+        default=None,
         min_length=3,
         max_length=10,
         pattern=r'^[A-Z0-9]+$',
-        description="Unique employee identifier"
+        description="Unique employee identifier (auto-generated if not provided)"
     )
     department: Department = Field(
         description="Employee's department"
@@ -378,7 +380,7 @@ class EmployeeUpdate(DatabaseModel):
         default=None,
         pattern=r'^\+?[\d\s\-\(\)\.x]+$',
         min_length=10,
-        max_length=20,
+        max_length=30,
         description="Employee's phone number"
     )
     birth_date: Optional[date] = Field(

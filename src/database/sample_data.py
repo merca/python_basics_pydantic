@@ -12,9 +12,8 @@ import random
 from faker import Faker
 
 from .connection import DatabaseManager
-from .models import EmployeeTable, UserTable
+from .models import EmployeeTable
 from ..models.employee import Department, EmploymentStatus
-from ..models.user import UserRole, UserStatus
 
 # Initialize Faker for generating realistic sample data
 fake = Faker()
@@ -122,86 +121,6 @@ def create_sample_employees(count: int = 20) -> List[EmployeeTable]:
     return employees
 
 
-def create_sample_users(count: int = 10) -> List[UserTable]:
-    """
-    Generate sample user data.
-    
-    Args:
-        count: Number of users to generate
-        
-    Returns:
-        List of UserTable instances
-    """
-    users = []
-    roles = list(UserRole)
-    statuses = list(UserStatus)
-    
-    # Role distribution weights
-    role_weights = {
-        UserRole.ADMIN: 1,
-        UserRole.HR_MANAGER: 2,
-        UserRole.MANAGER: 5,
-        UserRole.EMPLOYEE: 15,
-        UserRole.READONLY: 2
-    }
-    
-    for i in range(count):
-        role = random.choices(
-            roles,
-            weights=[role_weights[r] for r in roles],
-            k=1
-        )[0]
-        
-        status = random.choices(
-            statuses,
-            weights=[85, 5, 5, 5],  # Most active
-            k=1
-        )[0]
-        
-        # Generate permissions based on role
-        permissions = {
-            UserRole.ADMIN: ["*"],  # All permissions
-            UserRole.HR_MANAGER: [
-                "read_employees", "create_employees", "update_employees",
-                "delete_employees", "read_users", "update_users"
-            ],
-            UserRole.MANAGER: [
-                "read_employees", "update_employees", "read_users"
-            ],
-            UserRole.EMPLOYEE: [
-                "read_employees", "update_own_profile"
-            ],
-            UserRole.READONLY: [
-                "read_employees"
-            ]
-        }[role]
-        
-        # Simulate some login activity
-        last_login = None
-        if status == UserStatus.ACTIVE and random.random() < 0.8:
-            last_login = fake.date_time_between(start_date='-30d', end_date='now')
-        
-        user = UserTable(
-            username=fake.unique.user_name(),
-            email=fake.unique.email(),
-            first_name=fake.first_name(),
-            last_name=fake.last_name(),
-            password_hash="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # "secret"
-            role=role,
-            permissions=permissions,
-            status=status,
-            last_login=last_login,
-            login_attempts=random.randint(0, 2) if status == UserStatus.ACTIVE else 0,
-            profile_picture_url=fake.image_url() if random.random() < 0.4 else None,
-            timezone=random.choice([
-                "UTC", "America/New_York", "America/Los_Angeles", 
-                "Europe/London", "Asia/Tokyo", "Australia/Sydney"
-            ])
-        )
-        
-        users.append(user)
-    
-    return users
 
 
 def assign_managers(employees: List[EmployeeTable], session) -> None:
@@ -233,14 +152,14 @@ def assign_managers(employees: List[EmployeeTable], session) -> None:
 
 def insert_sample_data(db_manager: DatabaseManager, 
                       employee_count: int = 50, 
-                      user_count: int = 15) -> dict:
+                      user_count: int = 0) -> dict:
     """
     Insert sample data into the database.
     
     Args:
         db_manager: Database manager instance
         employee_count: Number of sample employees to create
-        user_count: Number of sample users to create
+        user_count: Number of sample users to create (ignored, kept for compatibility)
         
     Returns:
         Dictionary with insertion results
@@ -248,7 +167,6 @@ def insert_sample_data(db_manager: DatabaseManager,
     with db_manager.session_scope() as session:
         # Clear existing data
         session.query(EmployeeTable).delete()
-        session.query(UserTable).delete()
         session.commit()
         
         # Generate and insert employees
@@ -264,17 +182,11 @@ def insert_sample_data(db_manager: DatabaseManager,
         assign_managers(employees, session)
         session.commit()
         
-        # Generate and insert users
-        users = create_sample_users(user_count)
-        session.add_all(users)
-        session.commit()
-        
         return {
             "employees_created": len(employees),
-            "users_created": len(users),
+            "users_created": 0,
             "employees_with_managers": sum(1 for emp in employees if emp.manager_id),
-            "departments_represented": len(set(emp.department for emp in employees)),
-            "user_roles_created": len(set(user.role for user in users))
+            "departments_represented": len(set(emp.department for emp in employees))
         }
 
 
@@ -331,31 +243,6 @@ def create_demo_data() -> dict:
         }
     ]
     
-    # Predefined demo users
-    demo_users = [
-        {
-            "username": "admin",
-            "email": "admin@company.com",
-            "first_name": "System",
-            "last_name": "Administrator",
-            "password_hash": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-            "role": UserRole.ADMIN,
-            "permissions": ["*"],
-            "status": UserStatus.ACTIVE,
-            "timezone": "UTC"
-        },
-        {
-            "username": "alice_j",
-            "email": "alice.johnson@company.com", 
-            "first_name": "Alice",
-            "last_name": "Johnson",
-            "password_hash": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-            "role": UserRole.EMPLOYEE,
-            "permissions": ["read_employees", "update_own_profile"],
-            "status": UserStatus.ACTIVE,
-            "timezone": "America/New_York"
-        }
-    ]
     
     from .connection import get_database_manager
     db_manager = get_database_manager()
@@ -366,27 +253,23 @@ def create_demo_data() -> dict:
             employee = EmployeeTable(**emp_data)
             session.add(employee)
         
-        # Insert demo users  
-        for user_data in demo_users:
-            user = UserTable(**user_data)
-            session.add(user)
         
         session.commit()
     
     return {
         "demo_employees_created": len(demo_employees),
-        "demo_users_created": len(demo_users),
-        "note": "Demo data includes admin user (username: admin, password: secret)"
+        "demo_users_created": 0,
+        "note": "Demo data created successfully"
     }
 
 
-def reset_with_sample_data(employee_count: int = 20, user_count: int = 8) -> dict:
+def reset_with_sample_data(employee_count: int = 20, user_count: int = 0) -> dict:
     """
     Reset database and populate with fresh sample data.
     
     Args:
         employee_count: Number of sample employees
-        user_count: Number of sample users
+        user_count: Number of sample users (ignored, kept for compatibility)
         
     Returns:
         Dictionary with reset and insertion results
