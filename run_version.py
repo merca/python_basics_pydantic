@@ -16,10 +16,82 @@ import sys
 import os
 import subprocess
 import argparse
+import shutil
 from pathlib import Path
 
 
-def run_streamlit_app(version: str):
+def check_uv_available():
+    """Check if uv is available on the system."""
+    return shutil.which('uv') is not None
+
+
+def setup_environment(version: str, use_uv: bool = None):
+    """Set up virtual environment and install dependencies."""
+    
+    app_dir = Path(version)
+    requirements_file = app_dir / 'requirements.txt'
+    
+    if not requirements_file.exists():
+        print(f"⚠️  No requirements.txt found for {version}")
+        return True
+    
+    # Auto-detect uv availability if not specified
+    if use_uv is None:
+        use_uv = check_uv_available()
+    
+    print(f"🔧 Setting up {version} environment...")
+    
+    try:
+        os.chdir(app_dir)
+        
+        if use_uv:
+            print("⚡ Using uv (fast package manager)")
+            
+            # Create virtual environment with uv
+            venv_dir = Path('.venv')
+            if not venv_dir.exists():
+                print("📦 Creating virtual environment...")
+                subprocess.run(['uv', 'venv'], check=True)
+            
+            # Install dependencies with uv
+            print("📥 Installing dependencies...")
+            subprocess.run(['uv', 'pip', 'install', '-r', 'requirements.txt'], check=True)
+            
+        else:
+            print("🐌 Using traditional pip (slower - consider installing uv!)")
+            
+            # Create virtual environment with venv
+            venv_dir = Path('venv')
+            if not venv_dir.exists():
+                print("📦 Creating virtual environment...")
+                subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True)
+            
+            # Install dependencies with pip
+            print("📥 Installing dependencies...")
+            if sys.platform == 'win32':
+                pip_path = venv_dir / 'Scripts' / 'pip'
+            else:
+                pip_path = venv_dir / 'bin' / 'pip'
+            
+            subprocess.run([str(pip_path), 'install', '-r', 'requirements.txt'], check=True)
+        
+        print("✅ Environment setup complete!")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Error setting up environment: {e}")
+        return False
+    except FileNotFoundError as e:
+        if 'uv' in str(e):
+            print("❌ uv not found. Install it from: https://docs.astral.sh/uv/getting-started/installation/")
+            print("🔄 Falling back to traditional pip...")
+            return setup_environment(version, use_uv=False)
+        else:
+            print(f"❌ Error: {e}")
+            return False
+
+
+def run_streamlit_app(version: str, auto_setup: bool = True):
     """Run the Streamlit app for the specified version."""
     
     version_configs = {
@@ -64,10 +136,33 @@ def run_streamlit_app(version: str):
     print(f"📄 File: {app_file}")
     print("-" * 50)
     
+    # Setup environment if auto_setup is enabled
+    if auto_setup:
+        original_dir = Path.cwd()
+        if not setup_environment(version):
+            return False
+        os.chdir(original_dir)
+    
     # Change to app directory and run streamlit
     try:
         os.chdir(app_dir)
-        subprocess.run([sys.executable, '-m', 'streamlit', 'run', config['file']], check=True)
+        
+        # Determine the python executable to use
+        use_uv = check_uv_available()
+        if use_uv and Path('.venv').exists():
+            # Use uv to run streamlit in the virtual environment
+            subprocess.run(['uv', 'run', 'streamlit', 'run', config['file']], check=True)
+        elif Path('venv').exists():
+            # Use traditional venv
+            if sys.platform == 'win32':
+                python_path = Path('venv') / 'Scripts' / 'python'
+            else:
+                python_path = Path('venv') / 'bin' / 'python'
+            subprocess.run([str(python_path), '-m', 'streamlit', 'run', config['file']], check=True)
+        else:
+            # Use system python (not recommended)
+            subprocess.run([sys.executable, '-m', 'streamlit', 'run', config['file']], check=True)
+            
     except subprocess.CalledProcessError as e:
         print(f"❌ Error running Streamlit: {e}")
         return False
@@ -177,7 +272,11 @@ def check_dependencies(version: str):
         
     except ImportError as e:
         print(f"❌ Missing dependency: {e}")
-        print(f"💡 Install with: pip install -r {requirements_file}")
+        if check_uv_available():
+            print(f"💡 Install with: uv pip install -r {requirements_file}")
+        else:
+            print(f"💡 Install with: pip install -r {requirements_file}")
+        print(f"⚡ Or use the helper: python run_version.py {version.split('/')[-1]} (auto-setup)")
         return False
 
 
@@ -229,12 +328,8 @@ Examples:
     
     # Run version
     if args.version:
-        # Check dependencies first
-        if not check_dependencies(args.version):
-            print(f"\n💡 To install dependencies for {args.version}:")
-            print(f"   cd {args.version}")
-            print(f"   pip install -r requirements.txt")
-            sys.exit(1)
+        # Auto-setup is now handled within run_streamlit_app
+        # Just run the app, it will handle setup automatically
         
         success = run_streamlit_app(args.version)
         sys.exit(0 if success else 1)
@@ -246,6 +341,15 @@ Examples:
     print("  python run_version.py intermediate # 📊 Database integration")
     print("  python run_version.py advanced     # 🚀 Enterprise patterns") 
     print("  python run_version.py --info       # ℹ️  Show detailed info")
+    print("  python run_version.py --check VERSION  # 🔍 Check dependencies")
+    print("\n⚙️  Auto-setup: Automatically creates venv and installs dependencies")
+    
+    uv_available = check_uv_available()
+    if uv_available:
+        print("⚡ Using uv for fast package management")
+    else:
+        print("🐌 Using traditional pip (install uv for better performance!)")
+    
     print("\n💡 New to Pydantic? Start with: python run_version.py basic")
 
 

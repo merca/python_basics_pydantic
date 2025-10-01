@@ -22,31 +22,49 @@ By the end of this tutorial, you'll understand:
 
 ### Installation
 
-1. **Navigate to the basic directory**
-   ```bash
-   cd basic
-   ```
+#### Option 1: Using uv (Recommended - Much Faster!) ⚡
 
-2. **Create a virtual environment** (recommended)
-   ```bash
-   python -m venv venv
-   
-   # On Windows
-   venv\Scripts\activate
-   
-   # On macOS/Linux  
-   source venv/bin/activate
-   ```
+```bash
+# Navigate to the basic directory
+cd basic
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# Create virtual environment and install dependencies (one step!)
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 
-4. **Run the application**
-   ```bash
-   streamlit run app.py
-   ```
+# Run the application
+streamlit run app.py
+```
+
+#### Option 2: Traditional Method 🐌
+
+```bash
+# Navigate to the basic directory
+cd basic
+
+# Create a virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Windows
+venv\Scripts\activate
+# On macOS/Linux  
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+streamlit run app.py
+```
+
+#### Option 3: Helper Script (Easiest!) 🚀
+
+```bash
+# From repository root - handles everything automatically!
+python run_version.py basic
+```
 
 The application will open in your browser at `http://localhost:8501`
 

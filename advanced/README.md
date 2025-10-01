@@ -136,27 +136,45 @@ class Employee(DatabaseModel):
 
 ### Installation
 
-1. **Navigate to advanced directory**
-   ```bash
-   cd advanced
-   ```
+#### Option 1: Using uv (Recommended - Much Faster!) ⚡
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Unix
-   venv\Scripts\activate     # Windows
-   ```
+```bash
+# Navigate to advanced directory
+cd advanced
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 
-4. **Run the application**
-   ```bash
-   streamlit run main.py
-   ```
+# Run the application
+streamlit run main.py
+```
+
+#### Option 2: Traditional Method 🐌
+
+```bash
+# Navigate to advanced directory
+cd advanced
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Unix
+venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+streamlit run main.py
+```
+
+#### Option 3: Helper Script (Easiest!) 🚀
+
+```bash
+# From repository root - handles everything automatically!
+python run_version.py advanced
+```
 
 ## 📊 Features & Capabilities
 

@@ -145,33 +145,75 @@ conda activate pydantic-learning
 
 ## 📦 Package Manager Setup
 
-### pip Configuration
-```bash
-# Upgrade pip to latest version
-python -m pip install --upgrade pip
+### Install uv (Recommended)
 
-# Configure pip for faster installations (optional)
-mkdir -p ~/.pip
-cat > ~/.pip/pip.conf << EOF
-[global]
-timeout = 60
-index-url = https://pypi.org/simple/
-trusted-host = pypi.org
-               pypi.python.org
-               files.pythonhosted.org
-EOF
+`uv` is an extremely fast Python package installer and resolver, written in Rust. It's a drop-in replacement for pip and pip-tools workflows.
+
+#### Windows
+```powershell
+# Install via PowerShell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# OR via winget
+winget install astral-sh.uv
+
+# OR via pip (fallback)
+pip install uv
+
+# Verify installation
+uv --version
 ```
 
-### Virtual Environment Tools
+#### macOS
 ```bash
-# Install virtualenv (alternative to venv)
-pip install virtualenv
+# Install via Homebrew (recommended)
+brew install uv
 
-# Install pipenv (advanced dependency management)
-pip install pipenv
+# OR via curl
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install poetry (modern dependency management)
+# OR via pip (fallback)
+pip install uv
+
+# Verify installation
+uv --version
+```
+
+#### Linux
+```bash
+# Install via curl (recommended)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Add to PATH (add to ~/.bashrc or ~/.zshrc)
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# OR via pip (fallback)
+pip install uv
+
+# Verify installation
+uv --version
+```
+
+### uv Configuration
+```bash
+# uv works out of the box with sensible defaults
+# Optional: Configure cache directory
+export UV_CACHE_DIR="$HOME/.cache/uv"
+
+# Optional: Configure index URL
+export UV_INDEX_URL="https://pypi.org/simple/"
+```
+
+### Alternative Package Managers (For Reference)
+```bash
+# Traditional pip (slower)
+python -m pip install --upgrade pip
+
+# Poetry (for complex dependency management)
 pip install poetry
+
+# pipenv (for Pipfile-based workflows)
+pip install pipenv
 ```
 
 ## 🔧 Development Tools
@@ -315,7 +357,28 @@ python run_version.py --help
 
 ## 🚀 Quick Start Verification
 
-### Test Basic Version
+### Test Basic Version with uv (Recommended)
+```bash
+# Navigate to basic version
+cd basic
+
+# Create virtual environment and install dependencies (one command!)
+uv venv
+
+# Activate virtual environment
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+# Install dependencies with uv (much faster!)
+uv pip install -r requirements.txt
+
+# Launch application
+streamlit run app.py
+```
+
+### Alternative: Traditional Method
 ```bash
 # Navigate to basic version
 cd basic
@@ -329,7 +392,7 @@ venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
 
-# Install dependencies
+# Install dependencies (slower)
 pip install -r requirements.txt
 
 # Launch application
@@ -358,19 +421,23 @@ python run_version.py --check basic
 # Expected: ✅ Basic dependencies available
 ```
 
-### Verify Python Environment
+### Verify Environment
 ```bash
 # Check Python version
 python --version
 # Expected: Python 3.8+ (3.11+ recommended)
 
-# Check pip version  
+# Check uv version
+uv --version
+# Expected: uv 0.4.0+ (latest recommended)
+
+# Check pip version (fallback)
 pip --version
-# Expected: pip 21.0+ (latest recommended)
+# Expected: pip 21.0+ (if using traditional method)
 
 # Check virtual environment
 which python
-# Expected: Path to venv python when activated
+# Expected: Path to .venv or venv python when activated
 ```
 
 ## 🐛 Troubleshooting
@@ -407,6 +474,26 @@ python venv/pyvenv.cfg  # Check configuration
 ```
 
 #### Package Installation Problems
+
+**With uv (Recommended):**
+```bash
+# uv is self-updating, but you can manually update
+uv self update
+
+# Clear uv cache
+uv cache clean
+
+# Install without cache
+uv pip install --no-cache -r requirements.txt
+
+# Use alternative index
+uv pip install --index-url https://pypi.douban.com/simple/ -r requirements.txt
+
+# Verbose output for debugging
+uv pip install -v -r requirements.txt
+```
+
+**With traditional pip (Fallback):**
 ```bash
 # Upgrade pip first
 python -m pip install --upgrade pip
@@ -419,6 +506,30 @@ pip install --no-cache-dir -r requirements.txt
 
 # Alternative index (if PyPI is slow)
 pip install -i https://pypi.douban.com/simple/ -r requirements.txt
+```
+
+#### uv-Specific Issues
+```bash
+# uv not found after installation
+# Windows: Add to PATH manually
+setx PATH "%PATH%;%USERPROFILE%\.cargo\bin"
+
+# macOS/Linux: Add to shell profile
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# uv virtual environment activation issues
+# Use full path to activation script
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\Activate.ps1  # Windows PowerShell
+
+# uv installation fails
+# Fall back to pip installation
+pip install uv
+
+# Check uv configuration
+uv --help
+uv cache dir  # Show cache directory
 ```
 
 #### Streamlit Launch Issues

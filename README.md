@@ -125,8 +125,9 @@ python run_version.py advanced     # Enterprise patterns
 
 ### Option 2: Manual Setup
 
-#### New to Pydantic? 🔰 Start Here!
+#### ⚡ With uv (Recommended - Much Faster!)
 
+**New to Pydantic? 🔰 Start Here!**
 ```bash
 # 1. Clone the repository
 git clone https://github.com/merca/python_basics_pydantic.git
@@ -134,33 +135,65 @@ cd python_basics_pydantic
 
 # 2. Start with BASIC version
 cd basic
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
+streamlit run app.py
+```
+
+**Already know Pydantic basics? 📊 Jump to Intermediate!**
+```bash
+# Skip to database integration
+cd intermediate
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt  
+streamlit run app.py
+```
+
+**Ready for enterprise patterns? 🚀 Go Advanced!**
+```bash
+# Dive into production architecture
+cd advanced
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
+streamlit run main.py
+```
+
+#### 🐌 Traditional Method (Slower)
+
+<details>
+<summary>Click to expand traditional pip/venv instructions</summary>
+
+**Basic Version:**
+```bash
+cd basic
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-### Already know Pydantic basics? 📊 Jump to Intermediate!
-
+**Intermediate Version:**
 ```bash
-# Skip to database integration
 cd intermediate
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt  
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
-### Ready for enterprise patterns? 🚀 Go Advanced!
-
+**Advanced Version:**
 ```bash
-# Dive into production architecture
 cd advanced
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run main.py
 ```
+
+</details>
 
 ## 📚 Learning Journey Overview
 
