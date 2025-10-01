@@ -1,0 +1,16 @@
+# Basic Version - Pydantic Fundamentals
+# Minimal dependencies for learning core Pydantic features
+
+# Core dependencies
+pydantic[email]>=2.0.0
+streamlit>=1.25.0
+
+# Type hints and validation
+typing-extensions>=4.0.0
+
+# Optional: For better development experience
+# python-dateutil>=2.8.0  # Already included with pydantic
+
+# Development (optional)
+# black>=22.0.0
+# mypy>=1.0.0
